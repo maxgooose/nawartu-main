@@ -1,5 +1,6 @@
 # Nawartu Backend API
-
+mother my head hurts
+someone get me yerba matte 
 A complete MERN stack backend for Nawartu - Damascus Airbnb Clone.
 
 ## Features
@@ -65,7 +66,7 @@ A complete MERN stack backend for Nawartu - Damascus Airbnb Clone.
 Create a `.env` file in the backend directory:
 
 ```env
-PORT=5000
+PORT=5001
 MONGODB_URI=mongodb://localhost:27017/nawartu
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 NODE_ENV=development
