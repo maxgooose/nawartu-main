@@ -1,70 +1,171 @@
-# Getting Started with Create React App
+# Nawartu - A Modern Home Rental Platform (Damascus Edition)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![Nawartu Homepage](https://i.imgur.com/your-screenshot-url.png) <!-- Add a screenshot of your application -->
 
-## Available Scripts
+Nawartu is a full-stack home rental application inspired by Airbnb, tailored for discovering and booking unique homes in Damascus. It features a modern, intuitive user interface built with React and a robust backend powered by Node.js, Express, and MongoDB.
 
-In the project directory, you can run:
+[**Live Demo (Coming Soon!)**](#)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## ✨ Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Frontend (Client-Side):**
+- **Modern & Responsive Design:** Beautifully crafted with Tailwind CSS for a seamless experience on any device.
+- **Interactive Property Map:** (Future goal) Visualize property locations.
+- **Property Search & Filtering:** Easily search for listings by neighborhood or other criteria.
+- **Detailed Property Pages:** View high-resolution images, amenities, host information, and pricing.
+- **Seamless Booking Flow:** An intuitive modal for selecting dates and confirming bookings.
+- **User Authentication:** Secure login and registration modals.
+- **User Dashboard:**
+    - **My Trips:** View and manage your upcoming and past trips.
+    - **My Listings:** (For Hosts) Manage your properties and view incoming booking requests.
+- **Toast Notifications:** Real-time feedback for user actions.
 
-### `npm test`
+**Backend (Server-Side):**
+- **RESTful API:** A well-structured API built with Express.js.
+- **JWT Authentication:** Secure, token-based authentication with user roles (guest, host, admin).
+- **Mongoose Models:** Robust schemas for Users, Properties, and Bookings.
+- **CRUD Operations:** Full support for creating, reading, updating, and deleting properties and bookings.
+- **Advanced Search:** Backend logic for filtering and searching properties.
+- **Image Uploads:** Local storage for property images via `multer`.
+- **Environment Management:** Securely manage keys and database URIs.
+- **Seeder Script:** Easily populate the database with sample data for development.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🚀 Tech Stack
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Frontend:**
+  - **React 18** & React Router v6
+  - **Tailwind CSS** for styling
+  - **Lucide-React** for icons
+  - **React-Toastify** for notifications
+  - **React Datepicker** for selecting booking dates
+- **Backend:**
+  - **Node.js** & **Express.js**
+  - **MongoDB** with **Mongoose**
+  - **JSON Web Tokens (JWT)** for authentication
+  - **Bcrypt.js** for password hashing
+  - **Multer** for file uploads
+  - **Dotenv** for environment variables
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 📦 Getting Started
 
-### `npm run eject`
+### Prerequisites
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- [Node.js](https://nodejs.org/en/) (v18 or newer recommended)
+- [npm](https://www.npmjs.com/)
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account (or a local MongoDB installation)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Installation & Setup
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/nawartu.git
+    cd nawartu
+    ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+2.  **Install Frontend Dependencies:**
+    ```bash
+    npm install
+    ```
 
-## Learn More
+3.  **Install Backend Dependencies:**
+    ```bash
+    cd backend
+    npm install
+    ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+4.  **Configure Backend Environment Variables:**
+    - Create a `.env` file in the `backend` directory.
+    - Copy the contents of `.env.example` (if present) or use the following template:
+      ```env
+      PORT=5001
+      MONGODB_URI="your_mongodb_connection_string"
+      JWT_SECRET="a_super_secret_key_for_jwt"
+      NODE_ENV=development
+      ```
+    - **Important:** Replace `"your_mongodb_connection_string"` with your actual MongoDB Atlas connection string.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+5.  **Seed the Database (Optional but Recommended):**
+    - From the `backend` directory, run the seeder to populate your database with sample users and properties.
+    - This helps in testing the application immediately.
+      ```bash
+      npm run seed
+      ```
 
-### Code Splitting
+### Running the Application
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+You need to run both the frontend and backend servers concurrently in separate terminal windows.
 
-### Analyzing the Bundle Size
+1.  **Start the Backend Server:**
+    - From the `nawartu/backend` directory:
+      ```bash
+      npm run dev
+      ```
+    - The backend API will be running on `http://localhost:5001`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+2.  **Start the Frontend Server:**
+    - From the root `nawartu` directory:
+      ```bash
+      npm start
+      ```
+    - The application will open in your browser at `http://localhost:3000`.
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 📂 Project Structure
 
-### Advanced Configuration
+```
+nawartu/
+├── backend/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── .env
+│   ├── package.json
+│   └── server.js
+├── public/
+├── src/
+│   ├── components/
+│   │   └── ui/
+│   ├── pages/
+│   ├── context/
+│   ├── services/
+│   ├── App.jsx
+│   └── index.js
+├── .gitignore
+├── package.json
+└── README.md
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## 📜 Available Scripts
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Root Directory (Frontend)
 
-### `npm run build` fails to minify
+- `npm start`: Runs the React app in development mode.
+- `npm run build`: Builds the app for production.
+- `npm test`: Runs the test suite.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### `/backend` Directory
+
+- `npm run dev`: Starts the backend server with `nodemon` for auto-reloading.
+- `npm start`: Starts the backend server in production mode.
+- `npm run seed`: Clears and populates the database with sample data.
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/your-username/nawartu/issues).
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+Made with ❤️ in Damascus
