@@ -8,12 +8,15 @@ import apiRequest from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import PaymentModal from './PaymentModal';
 
 const BookingModal = ({ isOpen, onClose, propertyId, onBooked }) => {
   const [checkIn, setCheckIn] = useState(new Date());
   const [checkOut, setCheckOut] = useState(new Date(Date.now() + 86400000));
   const [guests, setGuests] = useState(1);
   const [error, setError] = useState('');
+  const [booking, setBooking] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -32,13 +35,18 @@ const BookingModal = ({ isOpen, onClose, propertyId, onBooked }) => {
       const avail = await apiRequest(`/api/bookings/property/${propertyId}/availability?checkIn=${body.checkIn}&checkOut=${body.checkOut}`);
       if(!avail.isAvailable){ setError('Property not available for selected dates'); return; }
       const data = await apiRequest('/api/bookings', 'POST', body);
-      onBooked(data.booking);
-      toast.success('Booking confirmed!');
-      navigate('/trips');
-      onClose();
+      setBooking(data.booking);
+      setShowPayment(true);
     } catch (err) {
       setError(err.message || 'Booking failed');
     }
+  };
+
+  const handlePaymentComplete = (updatedBooking) => {
+    onBooked(updatedBooking);
+    toast.success('Booking and payment completed!');
+    navigate('/trips');
+    onClose();
   };
 
   if (!user) return null; // only for logged in
@@ -58,8 +66,16 @@ const BookingModal = ({ isOpen, onClose, propertyId, onBooked }) => {
           </div>
         </div>
         <Input type="number" min="1" value={guests} onChange={(e) => setGuests(e.target.value)} placeholder="Guests" />
-        <Button type="submit" className="w-full">Confirm Booking</Button>
+        <Button type="submit" className="w-full">Continue to Payment</Button>
       </form>
+      
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        booking={booking}
+        onPaymentComplete={handlePaymentComplete}
+      />
     </Modal>
   );
 };

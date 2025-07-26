@@ -81,6 +81,14 @@ const propertySchema = new mongoose.Schema({
     count: {
       type: Number,
       default: 0
+    },
+    breakdown: {
+      cleanliness: { type: Number, default: 0, min: 0, max: 5 },
+      communication: { type: Number, default: 0, min: 0, max: 5 },
+      checkIn: { type: Number, default: 0, min: 0, max: 5 },
+      accuracy: { type: Number, default: 0, min: 0, max: 5 },
+      location: { type: Number, default: 0, min: 0, max: 5 },
+      value: { type: Number, default: 0, min: 0, max: 5 }
     }
   },
   reviews: [{
