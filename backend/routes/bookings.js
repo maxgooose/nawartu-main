@@ -63,7 +63,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create new booking
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { propertyId, checkIn, checkOut, guests, specialRequests } = req.body;
+    const { propertyId, checkIn, checkOut, guests, specialRequests, paymentMethod } = req.body;
 
     // Get property details
     const property = await Property.findById(propertyId);
@@ -86,6 +86,12 @@ router.post('/', authenticateToken, async (req, res) => {
     const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
     const totalPrice = nights * property.price;
 
+    // Set payment status based on payment method
+    let paymentStatus = 'pending';
+    if (paymentMethod === 'cash') {
+      paymentStatus = 'pending'; // Cash payments are pending until confirmed by host
+    }
+
     const booking = new Booking({
       property: propertyId,
       guest: req.user._id,
@@ -94,14 +100,21 @@ router.post('/', authenticateToken, async (req, res) => {
       checkOut: new Date(checkOut),
       guests,
       totalPrice,
-      specialRequests
+      specialRequests,
+      paymentMethod: paymentMethod || 'credit_card',
+      paymentStatus
     });
 
     await booking.save();
 
     const populatedBooking = await Booking.findById(booking._id)
       .populate('property', 'title images location price')
-      .populate('host', 'name avatar');
+      .populate('host', 'name avatar')
+      .populate('guest', 'name email');
+
+    // Send notification email to host
+    const { sendBookingNotificationToHost } = require('../services/email');
+    await sendBookingNotificationToHost(populatedBooking, populatedBooking.host, populatedBooking.property, populatedBooking.guest);
 
     res.status(201).json({
       message: 'Booking created successfully',
@@ -152,8 +165,17 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 
     const updatedBooking = await Booking.findById(booking._id)
       .populate('property', 'title images location')
-      .populate('guest', 'name avatar')
-      .populate('host', 'name avatar');
+      .populate('guest', 'name avatar email')
+      .populate('host', 'name avatar email');
+
+    // Send status update emails
+    const { sendBookingStatusUpdate, sendBookingConfirmationToGuest } = require('../services/email');
+    
+    if (status === 'confirmed') {
+      await sendBookingConfirmationToGuest(updatedBooking, updatedBooking.guest, updatedBooking.property);
+    } else if (status === 'cancelled' || status === 'completed') {
+      await sendBookingStatusUpdate(updatedBooking, updatedBooking.guest, updatedBooking.property, status);
+    }
 
     res.json({
       message: 'Booking status updated successfully',

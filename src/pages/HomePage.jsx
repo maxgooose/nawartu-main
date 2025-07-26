@@ -22,6 +22,10 @@ import apiRequest from "../services/api";
 import LoginModal from "../components/LoginModal";
 import RegisterModal from "../components/RegisterModal";
 import CreateListingModal from "../components/CreateListingModal";
+import { PropertyCard } from "../components/ui/AnimatedCard";
+import InfiniteScroll from "../components/ui/InfiniteScroll";
+import { PropertyCardSkeleton } from "../components/ui/Skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 const PRIMARY_GREEN = "#012F01";
 const ACCENT_GREEN = "#025220";
@@ -43,6 +47,9 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const { user, logout, loading: authLoading } = useContext(AuthContext);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
@@ -52,9 +59,11 @@ export default function HomePage() {
   useEffect(() => {
     const fetchListings = async () => {
       setLoading(true);
+      setPage(1);
       try {
-        const data = await apiRequest(`/api/properties?search=${query}`);
+        const data = await apiRequest(`/api/properties?search=${query}&page=1&limit=12`);
         setListings(data.properties || []);
+        setHasMore(data.pagination?.hasNext || false);
       } catch (err) {
         console.error("Failed to load listings", err);
       } finally {
@@ -64,16 +73,43 @@ export default function HomePage() {
     fetchListings();
   }, [query]);
 
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const data = await apiRequest(`/api/properties?search=${query}&page=${nextPage}&limit=12`);
+      setListings(prev => [...prev, ...(data.properties || [])]);
+      setHasMore(data.pagination?.hasNext || false);
+      setPage(nextPage);
+    } catch (err) {
+      console.error("Failed to load more listings", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const handleListingCreated = (newListing) => {
     setListings((prev) => [newListing, ...prev]);
   };
 
-  const filtered = listings;
+  const renderPropertyCard = (property) => (
+    <PropertyCard
+      property={property}
+      onClick={() => window.location.href = `/property/${property._id}`}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900" style={{ backgroundColor: SOFT_GREEN }}>
       {/* Navigation */}
-      <nav className="bg-white sticky top-0 z-30 border-b border-gray-200">
+      <motion.nav 
+        className="bg-white sticky top-0 z-30 border-b border-gray-200"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <img src={logo} alt="Nawartu Logo" className="h-11 w-11" />
@@ -112,8 +148,8 @@ export default function HomePage() {
               <MenuIcon className="w-5 h-5" />
             </button>
           </div>
-        </div>
-      </nav>
+                  </div>
+        </motion.nav>
 
       {/* Hero Search Section */}
       <section className="py-12 px-4 text-center" style={{ backgroundColor: PRIMARY_GREEN }}>
@@ -150,45 +186,41 @@ export default function HomePage() {
       
       {/* Listings */}
       <main className="max-w-7xl mx-auto p-6 space-y-8">
-        <h2 className="text-3xl font-bold text-gray-800">Homes in Damascus</h2>
+        <motion.h2 
+          className="text-3xl font-bold text-gray-800"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Homes in Damascus
+        </motion.h2>
+        
         {loading ? (
-          <p>Loading listings...</p>
-        ) : listings.length === 0 ? (
-          <p>No listings found.</p>
-        ) : (
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {listings.map((home) => (
-              <Card key={home._id} className="overflow-hidden bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-300 group">
-                <Link to={`/property/${home._id}`} className="block">
-                  <div className="relative">
-                    <img
-                      src={home.images?.[0] || "https://picsum.photos/800/600"}
-                      alt={home.title}
-                      className="h-56 w-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/90 rounded-full p-1.5 cursor-pointer">
-                      <Heart className="w-4 h-4 text-gray-600 group-hover:text-red-500 transition-colors" />
-                    </div>
-                  </div>
-                </Link>
-                <CardContent className="p-4 space-y-1">
-                  <h3 className="font-semibold text-lg truncate">{home.title}</h3>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <MapPin className="w-4 h-4" /> {home.location?.neighborhood || 'Damascus'}
-                  </div>
-                  <p className="text-sm text-gray-500 pt-1">
-                    {home.capacity?.guests || 2} guests · {home.capacity?.bedrooms || 1} bedroom
-                  </p>
-                  <p className="pt-2">
-                    <span className="font-bold text-lg" style={{ color: PRIMARY_GREEN }}>
-                      ${home.price}
-                    </span>
-                    <span className="text-gray-500"> / night</span>
-                  </p>
-                </CardContent>
-              </Card>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <PropertyCardSkeleton key={i} />
             ))}
           </div>
+        ) : listings.length === 0 ? (
+          <motion.div 
+            className="text-center py-12"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="text-gray-400 mb-4">
+              <SearchIcon size={48} className="mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No listings found</h3>
+            <p className="text-gray-600">Try adjusting your search criteria</p>
+          </motion.div>
+        ) : (
+          <InfiniteScroll
+            items={listings}
+            renderItem={renderPropertyCard}
+            loadMore={loadMore}
+            hasMore={hasMore}
+            loading={loadingMore}
+          />
         )}
       </main>
       

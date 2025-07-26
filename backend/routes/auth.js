@@ -34,6 +34,10 @@ router.post('/register', async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    // Send welcome email
+    const { sendWelcomeEmail } = require('../services/email');
+    await sendWelcomeEmail(user);
+
     res.status(201).json({
       message: 'User registered successfully',
       token,
