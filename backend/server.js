@@ -39,6 +39,8 @@ const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payments');
 const reviewRoutes = require('./routes/reviews');
 const mapsRoutes = require('./routes/maps');
+const uploadRoutes = require('./routes/upload');
+const hostToolsRoutes = require('./routes/hostTools');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -48,6 +50,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/maps', mapsRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/host', hostToolsRoutes);
 
 
 // Basic error handling
