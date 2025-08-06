@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
 
           if (res.ok) {
             const userData = await res.json();
-            setUser(userData);
+            setUser({ ...userData, isHost: userData.role === 'host' || userData.role === 'admin' });
           } else {
             // Token is invalid or expired
             logout();
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
   const login = (userData, userToken) => {
     localStorage.setItem('token', userToken);
     setToken(userToken);
-    setUser(userData);
+    setUser({ ...userData, isHost: userData.role === 'host' || userData.role === 'admin' });
   };
 
   const logout = () => {

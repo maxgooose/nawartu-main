@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import PropertyPage from './pages/PropertyPage';
 import TripsPage from './pages/TripsPage';
 import MyListingsPage from './pages/MyListingsPage';
+import HostDashboardPage from './pages/HostDashboardPage';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
@@ -19,6 +20,7 @@ function App() {
             <Route path="/property/:id" element={<PropertyPage />} />
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/my-listings" element={<MyListingsPage />} />
+            <Route path="/host/dashboard" element={<HostDashboardPage />} />
           </Routes>
           <ToastContainer
             position="top-right"

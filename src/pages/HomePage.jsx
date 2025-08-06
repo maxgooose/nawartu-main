@@ -131,6 +131,11 @@ export default function HomePage() {
                     <Link to="/my-listings">
                       <Button variant="outline">My Listings</Button>
                     </Link>
+                    {user.isHost && (
+                      <Link to="/host/dashboard">
+                        <Button variant="outline">Host Dashboard</Button>
+                      </Link>
+                    )}
                     <Button onClick={logout} variant="outline">Logout</Button>
                   </>
                 ) : (
