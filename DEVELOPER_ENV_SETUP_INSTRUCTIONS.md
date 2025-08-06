@@ -101,4 +101,4 @@ The application includes:
 - Host dashboard with analytics
 - Modern responsive UI
 
-**Start building your Damascus property rental platform!** 🏠
+**Start building your Damascus property rental platform!**
