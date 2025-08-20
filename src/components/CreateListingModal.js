@@ -48,18 +48,8 @@ const CreateListingModal = ({ isOpen, onClose, onListingCreated }) => {
       }
     }
 
+    // Use placeholder image since file uploads are removed
     let imageUrl = "https://picsum.photos/seed/picsum/800/600";
-    if (image) {
-      const formData = new FormData();
-      formData.append('image', image);
-      try {
-        const uploadData = await apiRequest('/api/upload', 'POST', formData);
-        imageUrl = uploadData.imageUrl;
-      } catch (err) {
-        setError('Image upload failed. Please try again.');
-        return;
-      }
-    }
 
     try {
       const propertyData = {

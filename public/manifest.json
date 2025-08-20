@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Nawartu",
+  "name": "Nawartu - Damascus Property Rentals",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +20,9 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#012F01",
+  "background_color": "#E5F2E8",
+  "orientation": "portrait",
+  "categories": ["travel", "business"],
+  "description": "Find and book amazing properties in Damascus"
 }

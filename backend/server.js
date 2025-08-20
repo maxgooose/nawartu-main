@@ -28,8 +28,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the 'uploads' directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -39,8 +38,10 @@ const userRoutes = require('./routes/users');
 const paymentRoutes = require('./routes/payments');
 const reviewRoutes = require('./routes/reviews');
 const mapsRoutes = require('./routes/maps');
-const uploadRoutes = require('./routes/upload');
+
 const hostToolsRoutes = require('./routes/hostTools');
+const adminRoutes = require('./routes/admin');
+const testRoutes = require('./routes/test');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -50,8 +51,10 @@ app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/maps', mapsRoutes);
-app.use('/api/upload', uploadRoutes);
+
 app.use('/api/host', hostToolsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/test', testRoutes);
 
 
 // Basic error handling

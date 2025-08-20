@@ -27,11 +27,12 @@ const sendBookingConfirmationToGuest = async (booking, guest, property) => {
         
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #012F01; margin-top: 0;">${property.title}</h3>
+          <p><strong>Confirmation Code:</strong> <span style="font-family: monospace; font-size: 18px; font-weight: bold; color: #012F01;">${booking.confirmationCode}</span></p>
           <p><strong>Check-in:</strong> ${new Date(booking.checkIn).toLocaleDateString()}</p>
           <p><strong>Check-out:</strong> ${new Date(booking.checkOut).toLocaleDateString()}</p>
           <p><strong>Guests:</strong> ${booking.guests}</p>
           <p><strong>Total Price:</strong> $${booking.totalPrice}</p>
-          <p><strong>Payment Method:</strong> ${booking.paymentMethod}</p>
+          <p><strong>Payment Method:</strong> ${booking.paymentMethod === 'card' ? 'Credit Card' : 'Cash'}</p>
           <p><strong>Address:</strong> ${property.location.address}</p>
         </div>
         
@@ -67,12 +68,13 @@ const sendBookingNotificationToHost = async (booking, host, property, guest) => 
         
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="color: #012F01; margin-top: 0;">${property.title}</h3>
-          <p><strong>Guest:</strong> ${guest.name}</p>
+          <p><strong>Confirmation Code:</strong> <span style="font-family: monospace; font-size: 18px; font-weight: bold; color: #012F01;">${booking.confirmationCode}</span></p>
+          <p><strong>Guest:</strong> ${guest.name} (${guest.email})</p>
           <p><strong>Check-in:</strong> ${new Date(booking.checkIn).toLocaleDateString()}</p>
           <p><strong>Check-out:</strong> ${new Date(booking.checkOut).toLocaleDateString()}</p>
           <p><strong>Guests:</strong> ${booking.guests}</p>
           <p><strong>Total Price:</strong> $${booking.totalPrice}</p>
-          <p><strong>Payment Method:</strong> ${booking.paymentMethod}</p>
+          <p><strong>Payment Method:</strong> ${booking.paymentMethod === 'card' ? 'Credit Card' : 'Cash'}</p>
           ${booking.specialRequests ? `<p><strong>Special Requests:</strong> ${booking.specialRequests}</p>` : ''}
         </div>
         
@@ -167,9 +169,55 @@ const sendWelcomeEmail = async (user) => {
   }
 };
 
+// Send test email
+const sendTestEmail = async (to, subject, message) => {
+  // Check if email credentials are configured
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    console.log('Email credentials not configured, simulating email send...');
+    console.log('=== SIMULATED EMAIL ===');
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Message: ${message}`);
+    console.log('======================');
+    
+    return { 
+      success: true, 
+      message: 'Email simulated successfully (no credentials configured)',
+      simulated: true,
+      emailDetails: { to, subject, message }
+    };
+  }
+
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: to,
+    subject: subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #012F01;">Test Email</h2>
+        <p>${message}</p>
+        <p>This is a test email from the Nawartu platform.</p>
+        <p>Best regards,<br>The Nawartu Team</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Test email sent successfully to:', to);
+    return { success: true, message: 'Test email sent successfully' };
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendBookingConfirmationToGuest,
   sendBookingNotificationToHost,
   sendBookingStatusUpdate,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendTestEmail
 }; 

@@ -8,6 +8,7 @@ import RecentBookings from '../components/host/RecentBookings';
 import HostPropertyList from '../components/host/HostPropertyList';
 import RevenueChart from '../components/host/RevenueChart';
 import { DollarSign, Bed, BarChart, Calendar } from 'lucide-react';
+import BackButton from '../components/ui/BackButton';
 
 const HostDashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -46,6 +47,9 @@ const HostDashboardPage = () => {
     <div className="bg-gray-50 min-h-screen">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+          <div className="mb-4">
+            <BackButton variant="outline" />
+          </div>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold leading-tight text-gray-900">

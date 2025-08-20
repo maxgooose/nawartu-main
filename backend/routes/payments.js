@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
-const { createOrder, captureOrder, getOrder } = require('../services/paypal');
+const stripeService = require('../services/stripe');
 const Booking = require('../models/Booking');
 const Property = require('../models/Property');
 const User = require('../models/User');
@@ -8,8 +8,8 @@ const { sendBookingConfirmationToGuest, sendBookingNotificationToHost } = requir
 
 const router = express.Router();
 
-// Create PayPal order
-router.post('/paypal/create-order', authenticateToken, async (req, res) => {
+// Create Stripe payment intent for card payments
+router.post('/stripe/create-payment-intent', authenticateToken, async (req, res) => {
   try {
     const { bookingId } = req.body;
 
@@ -26,56 +26,85 @@ router.post('/paypal/create-order', authenticateToken, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const paypalOrder = await createOrder(booking);
+    const paymentIntent = await stripeService.createPaymentIntent(
+      booking.totalPrice,
+      'usd',
+      {
+        bookingId: booking._id.toString(),
+        guestId: booking.guest._id.toString(),
+        propertyId: booking.property._id.toString()
+      }
+    );
+
+    // Store the payment intent ID for later confirmation
+    booking.paymentDetails = {
+      ...booking.paymentDetails,
+      stripePaymentIntentId: paymentIntent.paymentIntentId
+    };
+    await booking.save();
 
     res.json({
-      orderID: paypalOrder.id,
+      clientSecret: paymentIntent.clientSecret,
+      paymentIntentId: paymentIntent.paymentIntentId,
       booking
     });
   } catch (error) {
-    console.error('Create PayPal order error:', error);
-    res.status(500).json({ message: 'Failed to create PayPal order' });
+    console.error('Create Stripe payment intent error:', error);
+    res.status(500).json({ message: 'Failed to create payment intent' });
   }
 });
 
-// Capture PayPal payment
-router.post('/paypal/capture', authenticateToken, async (req, res) => {
+// Confirm Stripe payment
+router.post('/stripe/confirm', authenticateToken, async (req, res) => {
   try {
-    const { orderID, bookingId } = req.body;
-    const capture = await captureOrder(orderID);
+    const { paymentIntentId, bookingId } = req.body;
 
-    if (capture.status === 'COMPLETED') {
-      const booking = await Booking.findById(bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: 'Booking not found' });
-      }
+    const booking = await Booking.findById(bookingId)
+      .populate('property')
+      .populate('guest')
+      .populate('host');
 
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.guest._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const paymentResult = await stripeService.confirmPaymentIntent(paymentIntentId);
+
+    if (paymentResult.success) {
       booking.paymentStatus = 'paid';
-      booking.paymentMethod = 'paypal';
+      booking.paymentMethod = 'card';
+      booking.status = 'confirmed';
       booking.paymentDetails = {
-        paypalOrderId: orderID,
-        captureId: capture.purchase_units[0].payments.captures[0].id
+        stripePaymentIntentId: paymentIntentId,
+        stripeChargeId: paymentResult.chargeId,
+        last4: paymentResult.last4,
+        cardBrand: paymentResult.cardBrand,
+        transactionId: paymentResult.chargeId
       };
       await booking.save();
 
-      const populatedBooking = await Booking.findById(bookingId)
-        .populate('property')
-        .populate('guest')
-        .populate('host');
-
-      await sendBookingConfirmationToGuest(populatedBooking, populatedBooking.guest, populatedBooking.property);
-      await sendBookingNotificationToHost(populatedBooking, populatedBooking.host, populatedBooking.property, populatedBooking.guest);
+      // Send confirmation emails immediately
+      await sendBookingConfirmationToGuest(booking, booking.guest, booking.property);
+      await sendBookingNotificationToHost(booking, booking.host, booking.property, booking.guest);
 
       res.json({
-        message: 'Payment captured successfully',
-        booking: populatedBooking
+        message: 'Payment confirmed successfully',
+        booking,
+        confirmationCode: booking.confirmationCode
       });
     } else {
-      res.status(400).json({ message: 'Payment capture failed' });
+      res.status(400).json({ 
+        message: 'Payment confirmation failed',
+        error: paymentResult.error 
+      });
     }
   } catch (error) {
-    console.error('Capture PayPal payment error:', error);
-    res.status(500).json({ message: 'Failed to capture payment' });
+    console.error('Confirm Stripe payment error:', error);
+    res.status(500).json({ message: 'Failed to confirm payment' });
   }
 });
 
@@ -99,13 +128,17 @@ router.post('/cash', authenticateToken, async (req, res) => {
 
     booking.paymentStatus = 'pending';
     booking.paymentMethod = 'cash';
+    booking.status = 'confirmed'; // Confirm booking immediately for cash payments
     await booking.save();
 
+    // Send confirmation emails immediately for cash bookings too
+    await sendBookingConfirmationToGuest(booking, booking.guest, booking.property);
     await sendBookingNotificationToHost(booking, booking.host, booking.property, booking.guest);
 
     res.json({
-      message: 'Cash payment processed successfully',
-      booking
+      message: 'Cash payment booking confirmed successfully',
+      booking,
+      confirmationCode: booking.confirmationCode
     });
   } catch (error) {
     console.error('Cash payment error:', error);
@@ -113,8 +146,8 @@ router.post('/cash', authenticateToken, async (req, res) => {
   }
 });
 
-// Confirm cash payment
-router.post('/cash/confirm', authenticateToken, async (req, res) => {
+// Mark cash payment as received (for host)
+router.post('/cash/received', authenticateToken, async (req, res) => {
   try {
     const { bookingId } = req.body;
 
@@ -128,21 +161,23 @@ router.post('/cash/confirm', authenticateToken, async (req, res) => {
     }
 
     if (booking.host._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Only host can confirm cash payment' });
+      return res.status(403).json({ message: 'Only host can mark cash as received' });
+    }
+
+    if (booking.paymentMethod !== 'cash') {
+      return res.status(400).json({ message: 'This booking is not a cash payment' });
     }
 
     booking.paymentStatus = 'paid';
     await booking.save();
 
-    await sendBookingConfirmationToGuest(booking, booking.guest, booking.property);
-
     res.json({
-      message: 'Cash payment confirmed successfully',
+      message: 'Cash payment marked as received',
       booking
     });
   } catch (error) {
-    console.error('Confirm cash payment error:', error);
-    res.status(500).json({ message: 'Failed to confirm cash payment' });
+    console.error('Mark cash received error:', error);
+    res.status(500).json({ message: 'Failed to mark cash as received' });
   }
 });
 
@@ -168,6 +203,7 @@ router.get('/status/:bookingId', authenticateToken, async (req, res) => {
     res.json({
       paymentStatus: booking.paymentStatus,
       paymentMethod: booking.paymentMethod,
+      confirmationCode: booking.confirmationCode,
       booking
     });
   } catch (error) {
@@ -176,4 +212,54 @@ router.get('/status/:bookingId', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router; 
+// Refund payment (admin only)
+router.post('/refund', authenticateToken, async (req, res) => {
+  try {
+    const { bookingId, amount } = req.body;
+
+    // Check if user is admin (you might want to add this to middleware)
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.paymentMethod === 'card' && booking.paymentDetails.stripeChargeId) {
+      const refundResult = await stripeService.refundPayment(
+        booking.paymentDetails.stripeChargeId,
+        amount
+      );
+
+      if (refundResult.success) {
+        booking.paymentStatus = 'refunded';
+        await booking.save();
+
+        res.json({
+          message: 'Refund processed successfully',
+          refundId: refundResult.refundId,
+          amount: refundResult.amount
+        });
+      } else {
+        res.status(400).json({ message: 'Refund failed' });
+      }
+    } else if (booking.paymentMethod === 'cash') {
+      booking.paymentStatus = 'refunded';
+      await booking.save();
+      
+      res.json({
+        message: 'Cash booking marked as refunded',
+        booking
+      });
+    } else {
+      res.status(400).json({ message: 'Cannot refund this payment' });
+    }
+  } catch (error) {
+    console.error('Refund payment error:', error);
+    res.status(500).json({ message: 'Failed to process refund' });
+  }
+});
+
+module.exports = router;

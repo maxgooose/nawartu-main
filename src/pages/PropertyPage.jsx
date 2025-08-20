@@ -7,6 +7,7 @@ import BookingModal from '../components/BookingModal';
 import PropertyMap from '../components/PropertyMap';
 import ReviewsSection from '../components/ReviewsSection';
 import { AuthContext } from '../context/AuthContext';
+import BackButton from '../components/ui/BackButton';
 
 const PRIMARY_GREEN = '#012F01';
 const ACCENT_GREEN = '#007BFF'; // Added for the new button
@@ -47,6 +48,9 @@ const PropertyPage = () => {
         ) : (
           <>
             <header className="mb-4">
+              <div className="mb-4">
+                <BackButton variant="outline" />
+              </div>
               <h1 className="text-4xl font-bold text-gray-900">{property.title}</h1>
               <p className="text-md text-gray-600 flex items-center gap-2 mt-2">
                 <Star size={16} className="text-yellow-500" /> 4.8 · 
@@ -159,7 +163,13 @@ const PropertyPage = () => {
         )}
       </div>
       {user && (
-        <BookingModal isOpen={isBookingOpen} onClose={() => setBookingOpen(false)} propertyId={id} onBooked={() => {}} />
+        <BookingModal 
+          isOpen={isBookingOpen} 
+          onClose={() => setBookingOpen(false)} 
+          propertyId={id} 
+          property={property}
+          onBooked={() => {}} 
+        />
       )}
     </div>
   );

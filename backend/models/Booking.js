@@ -45,17 +45,35 @@ const bookingSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['credit_card', 'paypal', 'cash'],
+    enum: ['credit_card', 'cash'],
     default: 'cash'
   },
   paymentDetails: {
-    paypalOrderId: String,
-    captureId: String,
-    transactionId: String
+    stripePaymentIntentId: String,
+    stripeChargeId: String,
+    transactionId: String,
+    last4: String, // Last 4 digits of card for display
+    cardBrand: String // visa, mastercard, etc.
+  },
+  confirmationCode: {
+    type: String,
+    unique: true,
+    sparse: true // allows multiple null values
   },
   specialRequests: {
     type: String,
     trim: true
+  },
+  guestInfo: {
+    firstName: String,
+    lastName: String,
+    email: String,
+    phone: String,
+    passportNumber: String,
+    identificationType: {
+      type: String,
+      enum: ['passport', 'drivers_license', 'national_id']
+    }
   },
   cancellationReason: {
     type: String,
@@ -77,6 +95,15 @@ const bookingSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Generate confirmation code before saving
+bookingSchema.pre('save', function(next) {
+  if (!this.confirmationCode) {
+    // Generate a 6-character alphanumeric confirmation code
+    this.confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
+  next();
 });
 
 // Validate check-out date is after check-in date

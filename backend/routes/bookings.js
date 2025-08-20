@@ -63,7 +63,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create new booking
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { propertyId, checkIn, checkOut, guests, specialRequests, paymentMethod } = req.body;
+    const { propertyId, checkIn, checkOut, guests, specialRequests, paymentMethod, userInfo } = req.body;
 
     // Get property details
     const property = await Property.findById(propertyId);
@@ -92,6 +92,16 @@ router.post('/', authenticateToken, async (req, res) => {
       paymentStatus = 'pending'; // Cash payments are pending until confirmed by host
     }
 
+    // Store guest information for the booking
+    const guestInfo = {
+      firstName: userInfo?.firstName || req.user.name?.split(' ')[0] || '',
+      lastName: userInfo?.lastName || req.user.name?.split(' ').slice(1).join(' ') || '',
+      email: userInfo?.email || req.user.email || '',
+      phone: userInfo?.phone || req.user.phone || '',
+      passportNumber: userInfo?.passportNumber || '',
+      identificationType: userInfo?.identificationType || 'passport'
+    };
+
     const booking = new Booking({
       property: propertyId,
       guest: req.user._id,
@@ -102,7 +112,8 @@ router.post('/', authenticateToken, async (req, res) => {
       totalPrice,
       specialRequests,
       paymentMethod: paymentMethod || 'credit_card',
-      paymentStatus
+      paymentStatus,
+      guestInfo
     });
 
     await booking.save();
